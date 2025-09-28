@@ -1,0 +1,23 @@
+name: teambuilderapp65114540451_mcp
+description: A Flutter & MCP demo app
+
+publish_to: 'none' # กันไม่ให้ publish
+
+version: 1.0.0+1
+
+environment:
+  sdk: '^3.9.0'
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
