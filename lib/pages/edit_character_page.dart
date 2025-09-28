@@ -1,0 +1,102 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:pocketbase/pocketbase.dart';
+import '../services/pocketbase_service.dart';
+
+class EditCharacterPage extends StatefulWidget {
+  const EditCharacterPage({super.key});
+
+  @override
+  State<EditCharacterPage> createState() => _EditCharacterPageState();
+}
+
+class _EditCharacterPageState extends State<EditCharacterPage> {
+  final _form = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _role = TextEditingController();
+  final _power = TextEditingController();
+  bool _saving = false;
+  late RecordModel record;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    record = ModalRoute.of(context)!.settings.arguments as RecordModel;
+    _name.text = record.data['name'] ?? '';
+    _role.text = record.data['role'] ?? '';
+    _power.text = '${record.data['power'] ?? 0}';
+  }
+
+  Future<void> _submit() async {
+    if (!_form.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      await context.read<PocketBaseService>().updateCharacter(
+            id: record.id,
+            name: _name.text.trim(),
+            role: _role.text.trim(),
+            power: int.tryParse(_power.text.trim()) ?? 0,
+          );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('แก้ไขสำเร็จ')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('แก้ไขไม่สำเร็จ: $e')));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('แก้ไขตัวละคร')),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _form,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: _name,
+                    decoration: const InputDecoration(labelText: 'name'),
+                    validator: (v) => (v == null || v.isEmpty) ? 'ระบุชื่อ' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _role,
+                    decoration: const InputDecoration(labelText: 'role'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _power,
+                    decoration: const InputDecoration(labelText: 'power (number)'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('ยกเลิก')),
+                      const Spacer(),
+                      FilledButton.icon(
+                        onPressed: _saving ? null : _submit,
+                        icon: _saving
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.save),
+                        label: const Text('บันทึกการแก้ไข'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
